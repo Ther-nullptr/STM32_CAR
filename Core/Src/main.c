@@ -19,7 +19,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "dac.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -101,8 +103,13 @@ int main(void)
     MX_GPIO_Init();
     MX_USART1_UART_Init();
     MX_DAC_Init();
+    MX_ADC1_Init();
+    MX_ADC3_Init();
+    MX_TIM1_Init();
     /* USER CODE BEGIN 2 */
-    HAL_DAC_Start(&hdac,DAC_CHANNEL_1); //使能DAC
+    HAL_DAC_Start(&hdac, DAC_CHANNEL_1); // 使能DAC
+    HAL_TIM_IC_Start(&htim1, TIM_CHANNEL_1); // 使能定时器
+    delay_init();
     /* USER CODE END 2 */
 
     /* Infinite loop */
@@ -112,24 +119,24 @@ int main(void)
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        static int cnt = 1;
-        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        u1_printf("test: %d %f\r\n", cnt++, 1.0 / cnt);
-        HAL_Delay(500);
-
-        for (int i = 0; i < 100; ++i)
+        get_ultrasound();
+        delay_ms(10);
+        int DAC_min = 2048; // minimum of DAC output value
+        int thres = 10;     // threshold for color change
+        if (distance >= thres)
         {
-            HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, i * 4096 / 100);
-            HAL_Delay(10);
+            HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (distance > 2 * thres) ? 4095 : (distance - thres) * (4095 - DAC_min) / thres + DAC_min);
+            HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 0);
         }
-        for (int i = 99; i >= 0; --i)
+        else
         {
-            HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, i * 4096 / 100);
-            HAL_Delay(10);
+            HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (thres - distance) * (4095 - DAC_min) / thres + DAC_min);
+            HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);
         }
+        delay_ms(50);
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     }
-    /* USER CODE END 3 */
+        /* USER CODE END 3 */
 }
 
 /**
@@ -140,6 +147,7 @@ void SystemClock_Config(void)
 {
     RCC_OscInitTypeDef RCC_OscInitStruct = {0};
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+    RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
     /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -150,7 +158,7 @@ void SystemClock_Config(void)
     RCC_OscInitStruct.HSIState = RCC_HSI_ON;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+    RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL2;
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
     {
         Error_Handler();
@@ -163,7 +171,13 @@ void SystemClock_Config(void)
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
     RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+    PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV2;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
         Error_Handler();
     }
