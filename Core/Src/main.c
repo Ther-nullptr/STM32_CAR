@@ -19,11 +19,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dac.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,7 +68,17 @@ void SystemClock_Config(void);
 int main(void)
 {
     /* USER CODE BEGIN 1 */
-
+    void u1_printf(char *fmt, ...) // va_是c中对函数进行重载的库
+    {
+        uint16_t len;
+        va_list ap;
+        va_start(ap, fmt);
+        uint8_t buf[200];
+        vsprintf((char *)buf, fmt, ap);
+        va_end(ap);
+        len = strlen((char *)buf);
+        HAL_UART_Transmit(&huart1, buf, len, HAL_MAX_DELAY);
+    }
     /* USER CODE END 1 */
 
     /* MCU Configuration--------------------------------------------------------*/
@@ -85,8 +99,10 @@ int main(void)
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
+    MX_USART1_UART_Init();
+    MX_DAC_Init();
     /* USER CODE BEGIN 2 */
-
+    HAL_DAC_Start(&hdac,DAC_CHANNEL_1); //使能DAC
     /* USER CODE END 2 */
 
     /* Infinite loop */
@@ -96,8 +112,21 @@ int main(void)
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_2);
-        HAL_Delay(1000);
+        static int cnt = 1;
+        u1_printf("test: %d %f\r\n", cnt++, 1.0 / cnt);
+        HAL_Delay(500);
+
+        for (int i = 0; i < 100; ++i)
+        {
+            HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, i * 4096 / 100);
+            HAL_Delay(10);
+        }
+        for (int i = 99; i >= 0; --i)
+        {
+            HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, i * 4096 / 100);
+            HAL_Delay(10);
+        }
+        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     }
     /* USER CODE END 3 */
 }
