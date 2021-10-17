@@ -19,11 +19,14 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
+#include "i2c.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "draw_api.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,7 +46,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint8_t u2_RX_Buf[MAX_LEN];
+uint8_t u2_RX_ReceiveBit;
+int rx_len = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -85,19 +90,56 @@ int main(void)
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
+    MX_DMA_Init();
+    MX_USART2_UART_Init();
+    MX_USART1_UART_Init();
+    MX_I2C2_Init();
     /* USER CODE BEGIN 2 */
-
+    InitGraph();
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
+    HAL_UART_Receive_DMA(&huart2, u2_RX_Buf, RX_BUF_LEN);
     while (1)
     {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_2);
-        HAL_Delay(1000);
+        int receive_flag;
+        int verif_code = rand() % 1000000;
+        char verif_str[7];
+        oledPrintf(0, 16, "Please input");
+        oledPrintf(0, 28, "verification code");
+        oledPrintf(0, 40, "%d", verif_code);
+        UpdateScreen();
+        while (1)
+        {
+            if (receive_flag)
+            {
+                u2_RX_Buf[6] = '\0';
+                itoa(verif_code, verif_str, 10);
+                verif_str[6] = '\0';
+                u1_printf("rx buf: %s, verif str: %s", u2_RX_Buf, verif_str);
+                if (!strcmp(u2_RX_Buf, verif_str))
+                {
+                    oledPrintf(0, 0, "Correct!      ");
+                    UpdateScreen();
+                    delay_ms(5000);
+                    oledPrintf(0, 0, "         ");
+                    UpdateScreen();
+                    receive_flag = 0;
+                    break;
+                }
+                else
+                {
+                    oledPrintf(0, 0, "Incorrect...");
+                    UpdateScreen();
+                }
+                receive_flag = 0;
+            }
+            delay_ms(100);
+        }
     }
     /* USER CODE END 3 */
 }
