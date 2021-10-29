@@ -116,9 +116,6 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* USART1 interrupt Init */
-    HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(USART1_IRQn);
   /* USER CODE BEGIN USART1_MspInit 1 */
 
   /* USER CODE END USART1_MspInit 1 */
@@ -189,8 +186,6 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
     */
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10);
 
-    /* USART1 interrupt Deinit */
-    HAL_NVIC_DisableIRQ(USART1_IRQn);
   /* USER CODE BEGIN USART1_MspDeInit 1 */
 
   /* USER CODE END USART1_MspDeInit 1 */
@@ -244,13 +239,22 @@ void u2_printf(char* fmt, ...) { // usart.c末尾
     HAL_UART_Transmit(&huart2, buf, len, HAL_MAX_DELAY);
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
-    u1_printf("received verification code:");
-    HAL_UART_Transmit(&huart1, u2_RX_Buf, RX_BUF_LEN, HAL_MAX_DELAY);
-    u2_printf("received verification code:");
-    HAL_UART_Transmit(&huart2, u2_RX_Buf, RX_BUF_LEN, HAL_MAX_DELAY);
-    HAL_UART_Receive_DMA(&huart2, u2_RX_Buf, RX_BUF_LEN);
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
+{
+    for (int i = 0; i < 3; i++)
+    {
+        char tmp;
+        tmp = u2_RX_Buf[i];
+        u2_RX_Buf[i] = u2_RX_Buf[5 - i];
+        u2_RX_Buf[5 - i] = tmp;
+    }
+    u1_printf("received:"); // 转发到串口1
+    HAL_UART_Transmit(&huart1, u2_RX_Buf, sizeof(u2_RX_Buf), HAL_MAX_DELAY);
+    u1_printf("\n"); 
+    HAL_UART_Transmit(&huart2, u2_RX_Buf, sizeof(u2_RX_Buf), HAL_MAX_DELAY);
+    delay_ms(100);
 }
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
