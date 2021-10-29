@@ -19,9 +19,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "usart.h"
 #include "gpio.h"
-#include "delay.h"
+#include "string.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -34,6 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -44,7 +46,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+// uint8_t u2_RX_Buf[MAX_LEN];
+uint8_t u2_RX_Buf[6];
+uint8_t receive[6];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -87,9 +91,10 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
-  delay_init();
+  MX_DMA_Init();
+  MX_USART2_UART_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -99,10 +104,23 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    static int cnt = 1;
-    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-    u1_printf("test: %d %f\r\n", cnt++, 1.0 / cnt);
-    delay_ms(500);
+    int randomnumebr = rand() % 1000000;
+    u2_RX_Buf[0] = (char)(randomnumebr / 100000 % 10 - 0 + '0');
+    u2_RX_Buf[1] = (char)(randomnumebr / 10000 % 10 - 0 + '0');
+    u2_RX_Buf[2] = (char)(randomnumebr / 1000 % 10 - 0 + '0');
+    u2_RX_Buf[3] = (char)(randomnumebr / 100 % 10 - 0 + '0');
+    u2_RX_Buf[4] = (char)(randomnumebr / 10 % 10 - 0 + '0');
+    u2_RX_Buf[5] = (char)(randomnumebr % 10 - 0 + '0');
+    u1_printf("send number:"); // 转发到串1
+    HAL_UART_Transmit(&huart1, u2_RX_Buf, sizeof(u2_RX_Buf), HAL_MAX_DELAY);
+    u1_printf("\n");
+    HAL_UART_Transmit(&huart2, u2_RX_Buf, sizeof(u2_RX_Buf), HAL_MAX_DELAY);
+    // while (HAL_UART_Receive(&huart2, receive, sizeof(receive), 100) != HAL_OK)
+    //   ;
+    // u1_printf("receive number:"); // 转发到串1
+    // HAL_UART_Transmit(&huart1, receive, sizeof(receive), HAL_MAX_DELAY);
+    // u1_printf("\n");
+    HAL_Delay(3000);
   }
   /* USER CODE END 3 */
 }

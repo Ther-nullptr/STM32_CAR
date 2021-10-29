@@ -130,7 +130,6 @@ typedef enum
 typedef struct
 {
   __IO uint32_t SR;
-  
   __IO uint32_t CR1;
   __IO uint32_t CR2;
   __IO uint32_t SMPR1;
