@@ -96,13 +96,13 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
-  MX_TIM1_Init();
   MX_TIM8_Init();
   MX_TIM6_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim6);            // 使能定时�???6的中�???
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4); // 使能定时�???1的�?�道4，设定为PWM输出
+  HAL_TIM_Base_Start_IT(&htim6);            // 使能定时�????????6的中�????????
+  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_4); // 使能定时�????????1的�?�道4，设定为PWM输出
+  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3); 
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_2);
   /* USER CODE END 2 */
@@ -115,7 +115,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-    speed1 = 10;
+    speed1 = 102.0;
     HAL_Delay(500);
   }
   /* USER CODE END 3 */
