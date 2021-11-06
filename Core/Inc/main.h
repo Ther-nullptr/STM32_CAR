@@ -65,6 +65,10 @@ void Error_Handler(void);
 #define AIN1_GPIO_Port GPIOC
 #define AIN2_Pin GPIO_PIN_1
 #define AIN2_GPIO_Port GPIOC
+#define AIN3_Pin GPIO_PIN_2
+#define AIN3_GPIO_Port GPIOC
+#define AIN4_Pin GPIO_PIN_3
+#define AIN4_GPIO_Port GPIOC
 #define LED_Pin GPIO_PIN_2
 #define LED_GPIO_Port GPIOD
 /* USER CODE BEGIN Private defines */
