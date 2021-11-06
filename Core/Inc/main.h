@@ -61,6 +61,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define AIN1_Pin GPIO_PIN_0
+#define AIN1_GPIO_Port GPIOC
+#define AIN2_Pin GPIO_PIN_1
+#define AIN2_GPIO_Port GPIOC
 #define LED_Pin GPIO_PIN_2
 #define LED_GPIO_Port GPIOD
 /* USER CODE BEGIN Private defines */

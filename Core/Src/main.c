@@ -20,9 +20,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "dma.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-#include "string.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -48,7 +49,8 @@
 /* USER CODE BEGIN PV */
 // uint8_t u2_RX_Buf[MAX_LEN];
 uint8_t u2_RX_Buf[6];
-uint8_t receive[6];
+uint8_t u2_RX_ReceiveBit;
+int rx_len = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -78,7 +80,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  HAL_UART_Receive_DMA(&huart2, u2_RX_Buf, RX_BUF_LEN);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -94,7 +96,15 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
+  MX_TIM1_Init();
+  MX_TIM8_Init();
+  MX_TIM6_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_Base_Start_IT(&htim6);            // 使能定时�???6的中�???
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4); // 使能定时�???1的�?�道4，设定为PWM输出
+  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_1);
+  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -104,23 +114,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    int randomnumebr = rand() % 1000000;
-    u2_RX_Buf[0] = (char)(randomnumebr / 100000 % 10 - 0 + '0');
-    u2_RX_Buf[1] = (char)(randomnumebr / 10000 % 10 - 0 + '0');
-    u2_RX_Buf[2] = (char)(randomnumebr / 1000 % 10 - 0 + '0');
-    u2_RX_Buf[3] = (char)(randomnumebr / 100 % 10 - 0 + '0');
-    u2_RX_Buf[4] = (char)(randomnumebr / 10 % 10 - 0 + '0');
-    u2_RX_Buf[5] = (char)(randomnumebr % 10 - 0 + '0');
-    u1_printf("send number:"); // 转发到串1
-    HAL_UART_Transmit(&huart1, u2_RX_Buf, sizeof(u2_RX_Buf), HAL_MAX_DELAY);
-    u1_printf("\n");
-    HAL_UART_Transmit(&huart2, u2_RX_Buf, sizeof(u2_RX_Buf), HAL_MAX_DELAY);
-    // while (HAL_UART_Receive(&huart2, receive, sizeof(receive), 100) != HAL_OK)
-    //   ;
-    // u1_printf("receive number:"); // 转发到串1
-    // HAL_UART_Transmit(&huart1, receive, sizeof(receive), HAL_MAX_DELAY);
-    // u1_printf("\n");
-    HAL_Delay(3000);
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    speed1 = 10;
+    HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
@@ -150,7 +146,8 @@ void SystemClock_Config(void)
   }
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -181,7 +178,7 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
