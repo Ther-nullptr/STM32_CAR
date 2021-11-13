@@ -22,9 +22,11 @@
 
 /* USER CODE BEGIN 0 */
 #include "usart.h"
+#include "jy62.h"
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim8;
 
@@ -70,7 +72,49 @@ void MX_TIM2_Init(void)
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
+}
+/* TIM4 init function */
+void MX_TIM4_Init(void)
+{
 
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_Encoder_InitTypeDef sConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 0;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 65535;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  if (HAL_TIM_Encoder_Init(&htim4, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
 }
 /* TIM6 init function */
 void MX_TIM6_Init(void)
@@ -86,9 +130,9 @@ void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 72-1;
+  htim6.Init.Prescaler = 72 - 1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 40000-1;
+  htim6.Init.Period = 40000 - 1;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -103,7 +147,6 @@ void MX_TIM6_Init(void)
   /* USER CODE BEGIN TIM6_Init 2 */
 
   /* USER CODE END TIM6_Init 2 */
-
 }
 /* TIM8 init function */
 void MX_TIM8_Init(void)
@@ -121,9 +164,9 @@ void MX_TIM8_Init(void)
 
   /* USER CODE END TIM8_Init 1 */
   htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 72-1;
+  htim8.Init.Prescaler = 72 - 1;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 1000-1;
+  htim8.Init.Period = 1000 - 1;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
   htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -175,18 +218,17 @@ void MX_TIM8_Init(void)
 
   /* USER CODE END TIM8_Init 2 */
   HAL_TIM_MspPostInit(&htim8);
-
 }
 
-void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef* tim_encoderHandle)
+void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef *tim_encoderHandle)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(tim_encoderHandle->Instance==TIM2)
+  if (tim_encoderHandle->Instance == TIM2)
   {
-  /* USER CODE BEGIN TIM2_MspInit 0 */
+    /* USER CODE BEGIN TIM2_MspInit 0 */
 
-  /* USER CODE END TIM2_MspInit 0 */
+    /* USER CODE END TIM2_MspInit 0 */
     /* TIM2 clock enable */
     __HAL_RCC_TIM2_CLK_ENABLE();
 
@@ -195,61 +237,89 @@ void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef* tim_encoderHandle)
     PA0-WKUP     ------> TIM2_CH1
     PA1     ------> TIM2_CH2
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN TIM2_MspInit 1 */
+    /* TIM2 interrupt Init */
+    HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM2_IRQn);
+    /* USER CODE BEGIN TIM2_MspInit 1 */
 
-  /* USER CODE END TIM2_MspInit 1 */
+    /* USER CODE END TIM2_MspInit 1 */
+  }
+  else if (tim_encoderHandle->Instance == TIM4)
+  {
+    /* USER CODE BEGIN TIM4_MspInit 0 */
+
+    /* USER CODE END TIM4_MspInit 0 */
+    /* TIM4 clock enable */
+    __HAL_RCC_TIM4_CLK_ENABLE();
+
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    /**TIM4 GPIO Configuration
+    PB6     ------> TIM4_CH1
+    PB7     ------> TIM4_CH2
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    /* TIM4 interrupt Init */
+    HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM4_IRQn);
+    /* USER CODE BEGIN TIM4_MspInit 1 */
+
+    /* USER CODE END TIM4_MspInit 1 */
   }
 }
 
-void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
+void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
 {
 
-  if(tim_baseHandle->Instance==TIM6)
+  if (tim_baseHandle->Instance == TIM6)
   {
-  /* USER CODE BEGIN TIM6_MspInit 0 */
+    /* USER CODE BEGIN TIM6_MspInit 0 */
 
-  /* USER CODE END TIM6_MspInit 0 */
+    /* USER CODE END TIM6_MspInit 0 */
     /* TIM6 clock enable */
     __HAL_RCC_TIM6_CLK_ENABLE();
 
     /* TIM6 interrupt Init */
     HAL_NVIC_SetPriority(TIM6_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(TIM6_IRQn);
-  /* USER CODE BEGIN TIM6_MspInit 1 */
+    /* USER CODE BEGIN TIM6_MspInit 1 */
 
-  /* USER CODE END TIM6_MspInit 1 */
+    /* USER CODE END TIM6_MspInit 1 */
   }
 }
 
-void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* tim_pwmHandle)
+void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *tim_pwmHandle)
 {
 
-  if(tim_pwmHandle->Instance==TIM8)
+  if (tim_pwmHandle->Instance == TIM8)
   {
-  /* USER CODE BEGIN TIM8_MspInit 0 */
+    /* USER CODE BEGIN TIM8_MspInit 0 */
 
-  /* USER CODE END TIM8_MspInit 0 */
+    /* USER CODE END TIM8_MspInit 0 */
     /* TIM8 clock enable */
     __HAL_RCC_TIM8_CLK_ENABLE();
-  /* USER CODE BEGIN TIM8_MspInit 1 */
+    /* USER CODE BEGIN TIM8_MspInit 1 */
 
-  /* USER CODE END TIM8_MspInit 1 */
+    /* USER CODE END TIM8_MspInit 1 */
   }
 }
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *timHandle)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(timHandle->Instance==TIM8)
+  if (timHandle->Instance == TIM8)
   {
-  /* USER CODE BEGIN TIM8_MspPostInit 0 */
+    /* USER CODE BEGIN TIM8_MspPostInit 0 */
 
-  /* USER CODE END TIM8_MspPostInit 0 */
+    /* USER CODE END TIM8_MspPostInit 0 */
 
     __HAL_RCC_GPIOC_CLK_ENABLE();
     /**TIM8 GPIO Configuration
@@ -258,26 +328,25 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
     PC8     ------> TIM8_CH3
     PC9     ------> TIM8_CH4
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
+    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN TIM8_MspPostInit 1 */
+    /* USER CODE BEGIN TIM8_MspPostInit 1 */
 
-  /* USER CODE END TIM8_MspPostInit 1 */
+    /* USER CODE END TIM8_MspPostInit 1 */
   }
-
 }
 
-void HAL_TIM_Encoder_MspDeInit(TIM_HandleTypeDef* tim_encoderHandle)
+void HAL_TIM_Encoder_MspDeInit(TIM_HandleTypeDef *tim_encoderHandle)
 {
 
-  if(tim_encoderHandle->Instance==TIM2)
+  if (tim_encoderHandle->Instance == TIM2)
   {
-  /* USER CODE BEGIN TIM2_MspDeInit 0 */
+    /* USER CODE BEGIN TIM2_MspDeInit 0 */
 
-  /* USER CODE END TIM2_MspDeInit 0 */
+    /* USER CODE END TIM2_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_TIM2_CLK_DISABLE();
 
@@ -285,46 +354,68 @@ void HAL_TIM_Encoder_MspDeInit(TIM_HandleTypeDef* tim_encoderHandle)
     PA0-WKUP     ------> TIM2_CH1
     PA1     ------> TIM2_CH2
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0|GPIO_PIN_1);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0 | GPIO_PIN_1);
 
-  /* USER CODE BEGIN TIM2_MspDeInit 1 */
+    /* TIM2 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(TIM2_IRQn);
+    /* USER CODE BEGIN TIM2_MspDeInit 1 */
 
-  /* USER CODE END TIM2_MspDeInit 1 */
+    /* USER CODE END TIM2_MspDeInit 1 */
+  }
+  else if (tim_encoderHandle->Instance == TIM4)
+  {
+    /* USER CODE BEGIN TIM4_MspDeInit 0 */
+
+    /* USER CODE END TIM4_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM4_CLK_DISABLE();
+
+    /**TIM4 GPIO Configuration
+    PB6     ------> TIM4_CH1
+    PB7     ------> TIM4_CH2
+    */
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_6 | GPIO_PIN_7);
+
+    /* TIM4 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(TIM4_IRQn);
+    /* USER CODE BEGIN TIM4_MspDeInit 1 */
+
+    /* USER CODE END TIM4_MspDeInit 1 */
   }
 }
 
-void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
+void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
 {
 
-  if(tim_baseHandle->Instance==TIM6)
+  if (tim_baseHandle->Instance == TIM6)
   {
-  /* USER CODE BEGIN TIM6_MspDeInit 0 */
+    /* USER CODE BEGIN TIM6_MspDeInit 0 */
 
-  /* USER CODE END TIM6_MspDeInit 0 */
+    /* USER CODE END TIM6_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_TIM6_CLK_DISABLE();
 
     /* TIM6 interrupt Deinit */
     HAL_NVIC_DisableIRQ(TIM6_IRQn);
-  /* USER CODE BEGIN TIM6_MspDeInit 1 */
+    /* USER CODE BEGIN TIM6_MspDeInit 1 */
 
-  /* USER CODE END TIM6_MspDeInit 1 */
+    /* USER CODE END TIM6_MspDeInit 1 */
   }
 }
 
-void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef* tim_pwmHandle)
+void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef *tim_pwmHandle)
 {
 
-  if(tim_pwmHandle->Instance==TIM8)
+  if (tim_pwmHandle->Instance == TIM8)
   {
-  /* USER CODE BEGIN TIM8_MspDeInit 0 */
+    /* USER CODE BEGIN TIM8_MspDeInit 0 */
 
-  /* USER CODE END TIM8_MspDeInit 0 */
+    /* USER CODE END TIM8_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_TIM8_CLK_DISABLE();
-  /* USER CODE BEGIN TIM8_MspDeInit 1 */
+    /* USER CODE BEGIN TIM8_MspDeInit 1 */
 
-  /* USER CODE END TIM8_MspDeInit 1 */
+    /* USER CODE END TIM8_MspDeInit 1 */
   }
 }
 
@@ -340,15 +431,22 @@ struct SpeedStruct
   float Ek2; //e(k-2)
 };
 
-struct SpeedStruct speedpidstruct1 = {1, 0.2, 0.1, 0, 0, 0}; //initialize pid coefficients
+struct SpeedStruct speedpidstruct1 = {0.5, 0.2, 0.1, 0, 0, 0}; //initialize pid coefficients
 
+int flag = 1;
 float pwr1 = 0;
+float pwr2 = 0;
 float speed1 = 50;
-float curspeed1 = 0;
+float speed2 = 50;
+float curspeed1 = 80;
+float curspeed2 = 80;
+float distance1 = 0;
+float distance2 = 0;
+float averagedis = 0;
+
 float speedpidInc(float SetSpeed, float ActualSpeed)
 {
   float Inc;
-  printf("set: %f actual: %f\r\n", SetSpeed, ActualSpeed);
   speedpidstruct1.Ek = SetSpeed - ActualSpeed;
   Inc = ((speedpidstruct1.Kp + speedpidstruct1.Ki) * speedpidstruct1.Ek) -
         ((speedpidstruct1.Kp + speedpidstruct1.Kd * 2) * speedpidstruct1.Ek1) +
@@ -359,25 +457,49 @@ float speedpidInc(float SetSpeed, float ActualSpeed)
   speedpidstruct1.Ek1 = speedpidstruct1.Ek;
   return Inc;
 }
-void Setmotor(int pwr)
+void Setmotor(int pwr, int number)
 {
-  if (pwr >= 0)
+  if (number == 1)
   {
-    HAL_GPIO_WritePin(AIN1_GPIO_Port, AIN1_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(AIN2_GPIO_Port, AIN2_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(AIN1_GPIO_Port, AIN3_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(AIN2_GPIO_Port, AIN4_Pin, GPIO_PIN_RESET);
-    __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, pwr);
-    __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, pwr);
+    if (pwr >= 0)
+    {
+      HAL_GPIO_WritePin(AIN1_GPIO_Port, AIN1_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(AIN2_GPIO_Port, AIN2_Pin, GPIO_PIN_RESET);
+      __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, pwr);
+    }
+    else
+    {
+      HAL_GPIO_WritePin(AIN1_GPIO_Port, AIN1_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(AIN2_GPIO_Port, AIN2_Pin, GPIO_PIN_SET);
+      __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, -pwr);
+    }
   }
-  else
+  if (number == 2)
   {
-    HAL_GPIO_WritePin(AIN1_GPIO_Port, AIN1_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(AIN2_GPIO_Port, AIN2_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(AIN1_GPIO_Port, AIN3_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(AIN2_GPIO_Port, AIN4_Pin, GPIO_PIN_SET);
-    __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, -pwr);
-    __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, -pwr);
+    if (pwr >= 0)
+    {
+      HAL_GPIO_WritePin(AIN3_GPIO_Port, AIN3_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(AIN4_GPIO_Port, AIN4_Pin, GPIO_PIN_RESET);
+      __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, pwr);
+    }
+    else
+    {
+      HAL_GPIO_WritePin(AIN1_GPIO_Port, AIN3_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(AIN2_GPIO_Port, AIN4_Pin, GPIO_PIN_SET);
+      __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, -pwr);
+    }
+  }
+}
+void rotate()
+{
+  flag = 2;
+  if ((GetYaw() < 310 && GetYaw() > 300) || (GetYaw() < 60 && GetYaw() > 50))
+  {
+    distance1 = 0;
+    distance2 = 0;
+    averagedis = 0;
+    flag = 1;
+    InitAngle();
   }
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) //refresh PID value every 10ms
@@ -386,18 +508,58 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) //refresh PID value 
   if (htim->Instance == TIM6)
   {
     curspeed1 = (int16_t)TIM2->CNT;
-    curspeed1 = curspeed1 * 1.81; //(100/(260*4)*6.0*3.14)
+    curspeed2 = (int16_t)TIM4->CNT;
+    curspeed1 = curspeed1 * 1.80;
+    curspeed2 = curspeed2 * 1.80; //(100/(260*4)*6.0*3.14)
                                   //100=frequency,260*4=count times in one round
                                   //6.3=diameter(cm),final unit:cm/s
-    u1_printf("%f,%f\r\n", speed1, curspeed1);
+    u1_printf("goalspeed1:%f,curspeed1:%f\r\n", speed1, curspeed1);
+    u1_printf("goalspeed2:%f,curspeed2:%f\r\n", speed2, curspeed2);
     TIM2->CNT = 0;
-
+    TIM4->CNT = 0;
     pwr1 = pwr1 + speedpidInc(speed1, curspeed1);
+    pwr2 = pwr2 + speedpidInc(speed2, curspeed2);
     if (pwr1 > 1000)
       pwr1 = 1000;
     if (pwr1 < -1000)
       pwr1 = -1000;
-    Setmotor(pwr1);
+    if (pwr2 > 1000)
+      pwr2 = 1000;
+    if (pwr2 < -1000)
+      pwr2 = -1000;
+    Setmotor(pwr1, 1);
+    Setmotor(pwr2, 2);
+    {
+      distance1 += curspeed1 * 0.001;
+      distance2 += curspeed2 * 0.001;
+
+      averagedis = (distance1 + distance2) / 2;
+      u1_printf("distance:%f\r\n", averagedis);
+      if (averagedis >= 2)
+      {
+        rotate();
+        //             rotate(speed3,speed4,speed5,speed8);
+        // curspeed1 = 0;
+        // speed1 = 0;
+        // curspeed2 = 0;
+        // speed2 = 0;
+        // HAL_GPIO_WritePin(AIN1_GPIO_Port, AIN1_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(AIN2_GPIO_Port, AIN2_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(AIN3_GPIO_Port, AIN3_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(AIN3_GPIO_Port, AIN4_Pin, GPIO_PIN_RESET);
+        return;
+      }
+
+      // if (85 < GetYaw() && GetYaw() < 95)
+      //         {
+      //             distance1 = 0;
+      //             distance2 = 0;
+      //             distance5 = 0;
+      //             distance8 = 0;
+      //             avg_distance = 0;
+      //             InitAngle();
+      //         }
+    }
     // if (flag == 0) {
     //     duty += 10;
     //     if (duty >= 1000)

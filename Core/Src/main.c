@@ -26,7 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "jy62.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,7 +47,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-// uint8_t u2_RX_Buf[MAX_LEN];
+uint8_t u2_RX_Buf[MAX_LEN];
 uint8_t u2_RX_Buf[6];
 uint8_t u2_RX_ReceiveBit;
 int rx_len = 0;
@@ -80,7 +80,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  HAL_UART_Receive_DMA(&huart2, u2_RX_Buf, RX_BUF_LEN);
+  // HAL_UART_Receive_DMA(&huart2, u2_RX_Buf, RX_BUF_LEN);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -99,12 +99,24 @@ int main(void)
   MX_TIM8_Init();
   MX_TIM6_Init();
   MX_TIM2_Init();
+  MX_TIM4_Init();
+  jy62_Init(&huart2);
+  SetBaud(115200); //?????????115200?9600
+  SetHorizontal(); //?????????
+  SetVertical();   //?????????
+  InitAngle();     //???z????0
+  Calibrate();     //??????
+  SleepOrAwake();  //????/??
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim6);            // 使能定时�????????6的中�????????
-  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_4); // 使能定时�????????1的�?�道4，设定为PWM输出
-  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3); 
+
+  HAL_TIM_Base_Start_IT(&htim6);
+  // 使能定时�?????????6的中�?????????
+  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_4); // 使能定时�?????????1的�?�道4，设定为PWM输出
+  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_2);
+  HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_1);
+  HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -114,9 +126,26 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-    speed1 = 102.0;
-    HAL_Delay(500);
+    jy62MessageRecord();
+    //??????????????????????????
+    // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    if (flag == 0)
+    {
+      speed1 = 0;
+      speed2 = 0;
+    }
+    if (flag == 1)
+    {
+      speed1 = 150;
+      speed2 = 150;
+    }
+    if (flag == 2)
+    {
+      speed1 = 400;
+      speed2 = -400;
+    }
+    u1_printf("GetYaw:%f\r\n", GetYaw());
+    HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
@@ -146,8 +175,7 @@ void SystemClock_Config(void)
   }
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -178,7 +206,7 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
